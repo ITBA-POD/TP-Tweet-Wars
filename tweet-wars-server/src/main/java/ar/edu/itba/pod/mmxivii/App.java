@@ -3,8 +3,10 @@ package ar.edu.itba.pod.mmxivii;
 import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.GameMasterImpl;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl;
+import org.apache.commons.cli.*;
 
 import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -12,30 +14,84 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class App
 {
+	public static final String TWEETS_PROVIDER_NAME = "tweetsProvider";
+	public static final String GAME_MASTER_NAME = "gameMaster";
+	private static final String PORT_S = "p";
+	private static final String PORT_L = "port";
+	private static final String PORT_D = "7242";
+	private static final String REAL_S = "r";
+	private static final String REAL_L = "real";
+	private static final String REAL_D = "true";
+	private static final String MAX_THREADS_S = "t";
+	private static final String MAX_THREADS_L = "max-threads";
+	private static Registry registry = null;
+
 	private App()
 	{
 	}
 
 	public static void main( String[] args )
     {
-	    System.out.println( "Hello World!" );
-	    final GameMasterImpl gameMaster = new GameMasterImpl();
-	    final TweetsProvider tweetsProvider = new TweetsProviderImpl(true);
-
 	    try {
-		    final Registry registry = LocateRegistry.createRegistry(7242);
+		    final CommandLine cmdLine = parseArguments(args);
+		    final int port = Integer.valueOf( cmdLine.getOptionValue(PORT_L, PORT_D));
+		    final boolean slow = cmdLine.hasOption(REAL_L);
+		    if (cmdLine.hasOption(MAX_THREADS_L)) {
+			    final String maxThreads = cmdLine.getOptionValue(MAX_THREADS_L);
+			    System.setProperty("sun.rmi.transport.tcp.maxConnectionThreads", maxThreads);
+		    }
 
-		    //noinspection CastToIncompatibleInterface
-		    final TweetsProvider stub = (TweetsProvider) UnicastRemoteObject.exportObject(tweetsProvider, 0);
-		    registry.bind("tweetsProvider", stub);
-//		    registry.bind("gameMaster", UnicastRemoteObject.exportObject(gameMaster, 0));
+		    final GameMasterImpl gameMaster = new GameMasterImpl();
+		    final TweetsProvider tweetsProvider = new TweetsProviderImpl(slow);
 
+		    System.out.println( String.format("Starting Tweet Wars! Port:%d", port));
+		    registry = LocateRegistry.createRegistry(port);
 
-	    } catch (RemoteException e) {
-		    e.printStackTrace();
-	    } catch (AlreadyBoundException e) {
-		    e.printStackTrace();
+		    registry.bind(TWEETS_PROVIDER_NAME, UnicastRemoteObject.exportObject(tweetsProvider, 0));
+		    registry.bind(GAME_MASTER_NAME, UnicastRemoteObject.exportObject(gameMaster, 0));
+
+		    System.out.println("Waiting for players");
+
+	    } catch (RemoteException | ParseException | AlreadyBoundException e) {
+		    System.err.println("App Error: " + e.getMessage());
+		    System.exit(-1);
 	    }
 
     }
+
+	public static void shutdown()
+	{
+		try {
+			registry.unbind(TWEETS_PROVIDER_NAME);
+			registry.unbind(GAME_MASTER_NAME);
+		} catch (RemoteException | NotBoundException e) {
+			System.err.println("Shutdown Error: " + e.getMessage());
+			System.exit(-1);
+		}
+	}
+
+	private static CommandLine parseArguments(String[] args) throws ParseException
+	{
+		try {
+			final Options options = new Options();
+			options.addOption(PORT_S, PORT_L, true, "Referee server port");
+			options.addOption(REAL_S, REAL_L, false, "With simulated network latency");
+			options.addOption(MAX_THREADS_S, MAX_THREADS_L, true, "Max Threads for Server");
+			options.addOption("help", false, "Help");
+
+			// parse the command line arguments
+			final CommandLine commandLine = new BasicParser().parse(options, args, false);
+
+			if (commandLine.hasOption("help")) {
+				new HelpFormatter().printHelp("java -jar tweet-wars-server.jar <options>", options);
+				System.exit(-3);
+			}
+			return commandLine;
+		}
+		catch (ParseException exp) {
+			// oops, something went wrong
+			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
+			throw exp;
+		}
+	}
 }

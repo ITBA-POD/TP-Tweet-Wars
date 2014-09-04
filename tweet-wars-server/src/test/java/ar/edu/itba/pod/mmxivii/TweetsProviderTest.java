@@ -9,15 +9,15 @@ import org.junit.Test;
 
 import java.rmi.RemoteException;
 
+import static ar.edu.itba.pod.mmxivii.DummyPlayer.HASH;
 import static ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl.MAX_DELTA;
 import static ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl.MIN_DELAY;
 import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.*;
 
-public class AppTest
+public class TweetsProviderTest
 {
 	public static final int LOOP = 20;
-	public static final String HASH = "test";
 	public static final String USER = "user";
 
     @Test

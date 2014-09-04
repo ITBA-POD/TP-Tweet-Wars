@@ -49,13 +49,15 @@ public class GamePlayerTest
 	@Test
 	public void testGameMaster2()
 	{
+		final GamePlayer player2 = new DummyPlayer(DummyPlayer.USER2);
 		try {
 			gameMaster.newPlayer(player, HASH);
+			gameMaster.newPlayer(player2, HASH);
 
 			final Status status = tweetsProvider.getNewTweet(player, HASH);
 			final Status status2 = tweetsProvider.getNewTweet(player, HASH + "-fail");
 
-			gameMaster.tweetReceived(player, status);
+			gameMaster.tweetReceived(player2, status);
 
 			try {
 				gameMaster.tweetReceived(new DummyPlayer("other4"), status);

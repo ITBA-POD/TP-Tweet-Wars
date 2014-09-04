@@ -7,7 +7,11 @@ import javax.annotation.Nonnull;
 
 class DummyPlayer implements GamePlayer
 {
+	public static final String HASH = "test";
+	public static final String USER2 = "user2";
+	private static final long serialVersionUID = -3583518950845834237L;
 	private final String id;
+
 	public DummyPlayer()
 	{
 		id = "meTest";

@@ -64,6 +64,7 @@ public class GameMasterImpl implements GameMaster
 	{
 		final String hashCheck = tweet.generateCheck(playerData.hash);
 		if (!tweet.getCheck().equals(hashCheck)) throw new IllegalArgumentException("invalid hash check");
+		if (tweet.getSource().equals(playerData.player.getId())) throw new IllegalArgumentException("Cannot register your own tweets");
 	}
 
 	class GamePlayerData
