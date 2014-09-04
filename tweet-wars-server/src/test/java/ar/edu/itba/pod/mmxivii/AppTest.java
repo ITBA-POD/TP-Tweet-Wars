@@ -7,7 +7,6 @@ import ar.edu.itba.pod.mmxivii.tweetwars.impl.FortuneWheel;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl;
 import org.junit.Test;
 
-import javax.annotation.Nonnull;
 import java.rmi.RemoteException;
 
 import static ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl.MAX_DELTA;
@@ -55,6 +54,8 @@ public class AppTest
 			try {
 				final Status status = provider.getNewTweet(player, HASH);
 				assertStatus(status);
+				assertStatus(provider.getTweet(status.getId()));
+				assertThat(provider.getTweet(status.getId())).isEqualTo(status);
 			} catch (RemoteException e) {
 				fail("nono", e);
 			}
@@ -83,6 +84,8 @@ public class AppTest
 			assertThat(statuses).hasSize(100);
 			for (final Status status : statuses) {
 				assertStatus(status);
+				assertStatus(provider.getTweet(status.getId()));
+				assertThat(provider.getTweet(status.getId())).isEqualTo(status);
 			}
 			final Status[] statuses2 = provider.getNewTweets(player, HASH, 50);
 			assertThat(statuses2).isNotNull();
@@ -117,17 +120,4 @@ public class AppTest
 		assertThat(status.getCheck()).isEqualTo(status.generateCheck(HASH));
 	}
 
-	class DummyPlayer implements GamePlayer
-	{
-
-		@Nonnull @Override public String getId()
-		{
-			return "meTest";
-		}
-
-		@Override public void publishTweet(@Nonnull Status tweet)
-		{
-
-		}
-	}
 }

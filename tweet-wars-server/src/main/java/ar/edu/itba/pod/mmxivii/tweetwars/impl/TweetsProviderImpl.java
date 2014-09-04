@@ -7,6 +7,9 @@ import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.rmi.RemoteException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,6 +22,7 @@ public class TweetsProviderImpl implements TweetsProvider
 	private final FortuneWheel fortuneWheel = new FortuneWheel();
 	private final Random random = new Random();
 	private final boolean slow;
+	private final Map<Long, Status> tweets = Collections.synchronizedMap(new HashMap<Long, Status>());
 
 	public TweetsProviderImpl()
 	{
@@ -55,12 +59,14 @@ public class TweetsProviderImpl implements TweetsProvider
 	@Override
 	public Status getTweet(long id) throws RemoteException
 	{
-		return null;
+		return tweets.get(id);
 	}
 
 	private Status generateTweet(@Nonnull GamePlayer player, String hash)
 	{
-		return new Status(tweetId.incrementAndGet(), fortuneWheel.next(), player.getId(), hash);
+		final Status status = new Status(tweetId.incrementAndGet(), fortuneWheel.next(), player.getId(), hash);
+		tweets.put(status.getId(), status);
+		return status;
 	}
 
 	private void delay()
