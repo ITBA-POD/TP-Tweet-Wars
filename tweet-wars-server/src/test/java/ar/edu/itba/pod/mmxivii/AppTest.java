@@ -10,6 +10,9 @@ import org.junit.Test;
 import javax.annotation.Nonnull;
 import java.rmi.RemoteException;
 
+import static ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl.MAX_DELTA;
+import static ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl.MIN_DELAY;
+import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.*;
 
 public class AppTest
@@ -17,11 +20,11 @@ public class AppTest
 	public static final int LOOP = 20;
 	public static final String HASH = "test";
 	public static final String USER = "user";
-	final FortuneWheel fortuneWheel = new FortuneWheel();
 
     @Test
     public void testFortuneWheel()
     {
+	    final FortuneWheel fortuneWheel = new FortuneWheel();
 	    //noinspection MagicNumber
 	    for (int i = 0; i < LOOP; i++) {
 		    final String next = fortuneWheel.next();
@@ -32,6 +35,7 @@ public class AppTest
 	@Test
 	public void testStatus()
 	{
+		final FortuneWheel fortuneWheel = new FortuneWheel();
 		for (int i = 0; i < LOOP; i++) {
 			final String text = fortuneWheel.next();
 			final Status status = new Status(i, text, USER, HASH);
@@ -83,6 +87,26 @@ public class AppTest
 			final Status[] statuses2 = provider.getNewTweets(player, HASH, 50);
 			assertThat(statuses2).isNotNull();
 			assertThat(statuses2).hasSize(50);
+		} catch (RemoteException e) {
+			fail("nono", e);
+		}
+	}
+
+	@Test public void testSlowTweetsProvider()
+	{
+		final TweetsProvider provider = new TweetsProviderImpl(true);
+		final GamePlayer player = new DummyPlayer();
+
+		try {
+			//noinspection TooBroadScope
+			long init;
+			init = currentTimeMillis() + MIN_DELAY;
+			provider.getNewTweets(player, HASH, 10);
+			assertThat(currentTimeMillis()).isBetween(init, init + MAX_DELTA);
+
+			init = currentTimeMillis() + MIN_DELAY;
+			provider.getNewTweet(player, HASH);
+			assertThat(currentTimeMillis()).isBetween(init, init + MAX_DELTA);
 		} catch (RemoteException e) {
 			fail("nono", e);
 		}
