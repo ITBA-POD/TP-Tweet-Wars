@@ -8,7 +8,10 @@ import java.util.Collection;
 
 public interface TweetsProvider extends Remote
 {
-	@Nonnull Collection<Status> getTweets() throws RemoteException;
+	@Nonnull Status getNewTweet(@Nonnull GamePlayer player, @Nonnull String hash) throws RemoteException;
+
+	@Nonnull
+	Status[] getNewTweets(@Nonnull GamePlayer player) throws RemoteException;
 
 	@Nullable Status getTweet(long id) throws RemoteException;
 }
