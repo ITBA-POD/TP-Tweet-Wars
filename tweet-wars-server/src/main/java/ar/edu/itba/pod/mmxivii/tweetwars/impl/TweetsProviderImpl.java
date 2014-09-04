@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TweetsProviderImpl implements TweetsProvider
 {
+	public static final int MAX_BATCH_SIZE = 100;
 	private final AtomicLong tweetId = new AtomicLong();
 	private final FortuneWheel fortuneWheel = new FortuneWheel();
 
@@ -23,9 +24,14 @@ public class TweetsProviderImpl implements TweetsProvider
 
 	@Nonnull
 	@Override
-	public Status[] getNewTweets(@Nonnull GamePlayer player) throws RemoteException
+	public Status[] getNewTweets(@Nonnull GamePlayer player, String hash, int size) throws RemoteException
 	{
-		return null;
+		if (size < 1 || size > MAX_BATCH_SIZE) throw new IllegalArgumentException("invalid size: " + size);
+		final Status[] result = new Status[size];
+		for (int i = 0; i < size; i++) {
+			result[i] = generateTweet(player, hash);
+		}
+		return result;
 	}
 
 	@Nullable
