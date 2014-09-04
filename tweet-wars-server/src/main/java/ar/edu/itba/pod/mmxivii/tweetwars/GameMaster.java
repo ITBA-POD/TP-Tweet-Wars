@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
 
 public interface GameMaster extends Remote
 {
-	void newPlayer(@Nonnull GamePlayer player, @Nonnull String hash);
+	void newPlayer(@Nonnull GamePlayer player, @Nonnull String hash) throws RemoteException;
 
 	void tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException;
 
