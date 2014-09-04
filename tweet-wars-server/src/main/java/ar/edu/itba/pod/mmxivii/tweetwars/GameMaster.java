@@ -7,9 +7,9 @@ import java.util.Collection;
 
 public interface GameMaster extends Remote
 {
-	void newPlayer();
+	void newPlayer(@Nonnull GamePlayer player);
 
-	void tweetReceived(@Nonnull Status tweet) throws RemoteException;
+	void tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException;
 
-	void tweetsReceived(@Nonnull Collection<Status> tweets) throws RemoteException;
+	void tweetsReceived(@Nonnull GamePlayer player, @Nonnull Collection<Status> tweets) throws RemoteException;
 }
