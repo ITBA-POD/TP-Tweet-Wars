@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>itba-pod-2014-2c</groupId>
-    <artifactId>tweet-wars-server</artifactId>
+    <artifactId>tweet-wars-player-xxxxxx</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>tweet-wars-server</name>
+    <name>tweet-wars-player-Alumno</name>
     <url>http://www.itba.edu.ar</url>
 
     <properties>
@@ -15,6 +15,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>itba-pod-2014-2c</groupId>
+            <artifactId>tweet-wars-server</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
