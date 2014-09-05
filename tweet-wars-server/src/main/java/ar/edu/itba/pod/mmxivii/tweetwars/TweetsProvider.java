@@ -7,6 +7,9 @@ import java.rmi.RemoteException;
 
 public interface TweetsProvider extends Remote
 {
+	int FIRST_REGISTER_BONUS = 100;
+	int NEW_FAKE_TWEET_BONUS = 1000;
+
 	@Nonnull Status getNewTweet(@Nonnull GamePlayer player, @Nonnull String hash) throws RemoteException;
 
 	@Nonnull

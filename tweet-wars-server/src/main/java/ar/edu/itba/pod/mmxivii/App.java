@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.mmxivii;
 
+import ar.edu.itba.pod.mmxivii.tweetwars.GameMaster;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.GameMasterImpl;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl;
 import org.apache.commons.cli.*;
@@ -10,6 +11,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Map;
+import java.util.Scanner;
 
 public class App
 {
@@ -50,6 +53,14 @@ public class App
 		    registry.bind(GAME_MASTER_NAME, UnicastRemoteObject.exportObject(gameMaster, 0));
 
 		    System.out.println("Waiting for players");
+		    final Scanner scan = new Scanner(System.in);
+		    String line;
+		    do {
+			    line = scan.next();
+			    shutdown();
+
+		    } while(!"x".equals(line));
+		    System.exit(0);
 
 	    } catch (RemoteException | ParseException | AlreadyBoundException e) {
 		    System.err.println("App Error: " + e.getMessage());
@@ -58,15 +69,27 @@ public class App
 
     }
 
+	private static void printScores() throws RemoteException, NotBoundException
+	{
+		final GameMaster gameMaster = (GameMaster) registry.lookup(GAME_MASTER_NAME);
+		System.out.println("Scores:");
+		for (Map.Entry<Integer, String> entry : gameMaster.getScores().entrySet()) {
+			System.out.println(String.format("%s: %d", entry.getValue(), entry.getKey()));
+		}
+
+	}
 	public static void shutdown()
 	{
 		try {
+			printScores();
+
 			registry.unbind(TWEETS_PROVIDER_NAME);
 			registry.unbind(GAME_MASTER_NAME);
 		} catch (RemoteException | NotBoundException e) {
 			System.err.println("Shutdown Error: " + e.getMessage());
 			System.exit(-1);
 		}
+
 	}
 
 	private static CommandLine parseArguments(String[] args) throws ParseException

@@ -7,9 +7,10 @@ import ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl;
 import org.junit.Test;
 
 import java.rmi.RemoteException;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.fail;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider.FIRST_REGISTER_BONUS;
+import static org.assertj.core.api.Assertions.*;
 
 public class GamePlayerTest
 {
@@ -58,12 +59,12 @@ public class GamePlayerTest
 	public void testGameMaster2()
 	{
 		try {
-			gameMaster.newPlayer(player1, HASH);
-			gameMaster.newPlayer(player2, HASH);
+			gameMaster.newPlayer(player1, player1.getHash());
+			gameMaster.newPlayer(player2, player2.getHash());
 
-			final Status status = tweetsProvider.getNewTweet(player1, HASH);
+			final Status status = tweetsProvider.getNewTweet(player1, player1.getHash());
 			final Status status2 = tweetsProvider.getNewTweet(player1, HASH + "-fail");
-			final Status status3 = tweetsProvider.getNewTweet(player1, HASH);
+			final Status status3 = tweetsProvider.getNewTweet(player1, player1.getHash());
 
 			final int score1 = gameMaster.tweetReceived(player2, status);
 
@@ -81,4 +82,56 @@ public class GamePlayerTest
 		}
 	}
 
+	@Test
+	public void testGameMasterScores()
+	{
+		try {
+			gameMaster.newPlayer(player1, player1.getHash());
+			assertThat(gameMaster.getScore(player1)).isZero();
+			gameMaster.newPlayer(player2, player2.getHash());
+			gameMaster.newPlayer(player3, player3.getHash());
+			assertThat(gameMaster.getScore(player3)).isZero();
+			assertThat(gameMaster.getScore(player2)).isZero();
+
+			int score1 = gameMaster.getScore(player2);
+			int score2 = gameMaster.getScore(player2);
+			int score3 = gameMaster.getScore(player2);
+
+			for (int i = 0; i < 20; i++) {
+				final Status status = tweetsProvider.getNewTweet(player1, player1.getHash());
+
+				final int newScore2 = gameMaster.tweetReceived(player2, status);
+				assertThat(newScore2).isEqualTo(score2 + 1 + FIRST_REGISTER_BONUS);
+				score2 = newScore2;
+
+				final int newScore3 = gameMaster.tweetReceived(player3, status);
+				assertThat(newScore3).isEqualTo(score3 + 1);
+				score3 = newScore3;
+
+				final int newScore1 = gameMaster.getScore(player1);
+				assertThat(newScore1).isEqualTo(score1 + 2);
+				score1 = newScore1;
+			}
+
+			for (int i = 0; i < 20; i++) {
+				final Status status = tweetsProvider.getNewTweet(player2, player2.getHash());
+
+				final int newScore1 = gameMaster.tweetReceived(player1, status);
+				assertThat(newScore1).isEqualTo(score1 + 1 + FIRST_REGISTER_BONUS);
+				score1 = newScore1;
+
+				final int newScore3 = gameMaster.tweetReceived(player3, status);
+				assertThat(newScore3).isEqualTo(score3 + 1);
+				score3 = newScore3;
+			}
+
+			int prevScore = Integer.MAX_VALUE;
+			for (Map.Entry<Integer, String> entry : gameMaster.getScores().entrySet()) {
+				assertThat(entry.getKey()).isLessThanOrEqualTo(prevScore);
+				prevScore = entry.getKey();
+			}
+		} catch (RemoteException e) {
+			fail("no", e);
+		}
+	}
 }

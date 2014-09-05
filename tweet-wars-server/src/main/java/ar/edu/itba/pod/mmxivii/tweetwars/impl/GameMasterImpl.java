@@ -10,6 +10,7 @@ import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameMasterImpl implements GameMaster
@@ -67,6 +68,23 @@ public class GameMasterImpl implements GameMaster
 
 		int result = 0;
 		for (Status tweet : tweets) result = registerTweet(tweet, playerData);
+		return result;
+	}
+
+	@Override
+	public int getScore(@Nonnull GamePlayer player) throws RemoteException
+	{
+		final GamePlayerData playerData = getGamePlayerData(player);
+		return playerData.score.get();
+	}
+
+	@Override
+	public Map<Integer, String> getScores() throws RemoteException
+	{
+		final TreeMap<Integer, String> result = new TreeMap<>(Collections.reverseOrder());
+		for (GamePlayerData data : players.values()) {
+			result.put(data.score.get(), data.getId());
+		}
 		return result;
 	}
 

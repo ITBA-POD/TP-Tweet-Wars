@@ -82,12 +82,14 @@ public class TweetsProviderImpl implements TweetsProvider
 				// first register of a false tweet, good!
 				final TweetData data = new TweetData(tweet, false, true);
 				tweets.put(tweet.getId(), data);
-				tweetScore += 1000; // first register of a fake tweet, good for the source
-				playerScore += 100; // first register of a tweet
+				tweetScore += NEW_FAKE_TWEET_BONUS; // first register of a fake tweet, good for the source
+				playerScore += FIRST_REGISTER_BONUS; // first register of a tweet
 			} else {
 				if (!tweet.equals(tweetData.tweet)) throw new IllegalArgumentException("There is another tweet with the same id!");
-				if (!tweetData.isRegistered) playerScore += 100;
-				else tweetData.isRegistered = true;
+				if (!tweetData.isRegistered) {
+					playerScore += FIRST_REGISTER_BONUS;
+					tweetData.isRegistered = true;
+				}
 			}
 		}
 		return new int[]{playerScore, tweetScore};
