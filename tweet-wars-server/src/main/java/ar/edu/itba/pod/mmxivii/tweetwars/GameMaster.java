@@ -8,7 +8,7 @@ public interface GameMaster extends Remote
 {
 	void newPlayer(@Nonnull GamePlayer player, @Nonnull String hash) throws RemoteException;
 
-	void tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException;
+	int tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException;
 
-	void tweetsReceived(@Nonnull GamePlayer player, @Nonnull Status[] tweets) throws RemoteException;
+	int tweetsReceived(@Nonnull GamePlayer player, @Nonnull Status[] tweets) throws RemoteException;
 }

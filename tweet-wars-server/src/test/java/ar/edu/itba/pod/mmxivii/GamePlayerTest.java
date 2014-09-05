@@ -1,6 +1,5 @@
 package ar.edu.itba.pod.mmxivii;
 
-import ar.edu.itba.pod.mmxivii.tweetwars.GamePlayer;
 import ar.edu.itba.pod.mmxivii.tweetwars.Status;
 import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.GameMasterImpl;
@@ -15,25 +14,34 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 public class GamePlayerTest
 {
 	public static final String HASH = "test";
-	private final GameMasterImpl gameMaster = new GameMasterImpl();
-	private final TweetsProvider tweetsProvider = new TweetsProviderImpl();
-	private final GamePlayer player = new DummyPlayer();
+	public static final String HASH2 = "test2";
+	private final TweetsProvider tweetsProvider;
+	private final GameMasterImpl gameMaster;
+	private final DummyPlayer player1 = new DummyPlayer();
+	private final DummyPlayer player2 = new DummyPlayer();
+	private final DummyPlayer player3 = new DummyPlayer();
+
+	public GamePlayerTest()
+	{
+		tweetsProvider = new TweetsProviderImpl();
+		gameMaster = new GameMasterImpl((TweetsProviderImpl) tweetsProvider);
+	}
 
 	@Test
 	public void testGameMaster1()
 	{
 
-		gameMaster.newPlayer(player, HASH);
-		gameMaster.newPlayer(new DummyPlayer("other2"), HASH);
+		gameMaster.newPlayer(player1, player1.getHash());
+		gameMaster.newPlayer(player2, player2.getHash());
 
 		try {
-			gameMaster.newPlayer(player, HASH);
+			gameMaster.newPlayer(player1, HASH);
 			failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 		} catch (IllegalArgumentException ignore) {}
 
 		try {
 			//noinspection ConstantConditions
-			gameMaster.newPlayer(player, null);
+			gameMaster.newPlayer(player1, null);
 			failBecauseExceptionWasNotThrown(NullPointerException.class);
 		} catch (NullPointerException ignore) {}
 		try {
@@ -42,30 +50,30 @@ public class GamePlayerTest
 			failBecauseExceptionWasNotThrown(NullPointerException.class);
 		} catch (NullPointerException ignore) {}
 
-		gameMaster.newPlayer(new DummyPlayer("other3"), HASH);
+		gameMaster.newPlayer(player3, player3.getHash());
 	}
 
 	@SuppressWarnings("NestedTryStatement")
 	@Test
 	public void testGameMaster2()
 	{
-		final GamePlayer player2 = new DummyPlayer(DummyPlayer.USER2);
 		try {
-			gameMaster.newPlayer(player, HASH);
+			gameMaster.newPlayer(player1, HASH);
 			gameMaster.newPlayer(player2, HASH);
 
-			final Status status = tweetsProvider.getNewTweet(player, HASH);
-			final Status status2 = tweetsProvider.getNewTweet(player, HASH + "-fail");
+			final Status status = tweetsProvider.getNewTweet(player1, HASH);
+			final Status status2 = tweetsProvider.getNewTweet(player1, HASH + "-fail");
+			final Status status3 = tweetsProvider.getNewTweet(player1, HASH);
 
-			gameMaster.tweetReceived(player2, status);
+			final int score1 = gameMaster.tweetReceived(player2, status);
 
 			try {
-				gameMaster.tweetReceived(new DummyPlayer("other4"), status);
+				gameMaster.tweetReceived(player3, status);
 				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 			} catch (IllegalArgumentException ignore) {}
 
 			try {
-				gameMaster.tweetReceived(player, status2);
+				gameMaster.tweetReceived(player1, status2);
 				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 			} catch (IllegalArgumentException ignore) {}
 		} catch (RemoteException e) {

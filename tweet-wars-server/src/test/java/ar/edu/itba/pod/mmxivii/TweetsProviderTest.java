@@ -1,6 +1,5 @@
 package ar.edu.itba.pod.mmxivii;
 
-import ar.edu.itba.pod.mmxivii.tweetwars.GamePlayer;
 import ar.edu.itba.pod.mmxivii.tweetwars.Status;
 import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.FortuneWheel;
@@ -40,7 +39,7 @@ public class TweetsProviderTest
 			final Status status = new Status(i, text, USER, HASH);
 			assertThat(status.getId()).isEqualTo(i);
 			assertThat(status.getText()).isEqualTo(text);
-			assertStatus(status);
+			assertStatus(status, HASH);
 		}
 	}
 
@@ -48,13 +47,13 @@ public class TweetsProviderTest
 	public void testTweetsProvider1()
 	{
 		final TweetsProvider provider = new TweetsProviderImpl();
-		final GamePlayer player = new DummyPlayer();
+		final DummyPlayer player = new DummyPlayer();
 
 		for (int i = 0; i < LOOP; i++) {
 			try {
-				final Status status = provider.getNewTweet(player, HASH);
-				assertStatus(status);
-				assertStatus(provider.getTweet(status.getId()));
+				final Status status = provider.getNewTweet(player, player.getHash());
+				assertStatus(status, player.getHash());
+				assertStatus(provider.getTweet(status.getId()), player.getHash());
 				assertThat(provider.getTweet(status.getId())).isEqualTo(status);
 			} catch (RemoteException e) {
 				fail("nono", e);
@@ -67,27 +66,27 @@ public class TweetsProviderTest
 	public void testTweetsProvider2()
 	{
 		final TweetsProvider provider = new TweetsProviderImpl();
-		final GamePlayer player = new DummyPlayer();
+		final DummyPlayer player = new DummyPlayer();
 
 		try {
 			try {
-				provider.getNewTweets(player, HASH, 0);
+				provider.getNewTweets(player, player.getHash(), 0);
 				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 			} catch (IllegalArgumentException ignored) {}
 			try {
-				provider.getNewTweets(player, HASH, 101);
+				provider.getNewTweets(player, player.getHash(), 101);
 				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 			} catch (IllegalArgumentException ignored) {}
 
-			final Status[] statuses = provider.getNewTweets(player, HASH, 100);
+			final Status[] statuses = provider.getNewTweets(player, player.getHash(), 100);
 			assertThat(statuses).isNotNull();
 			assertThat(statuses).hasSize(100);
 			for (final Status status : statuses) {
-				assertStatus(status);
-				assertStatus(provider.getTweet(status.getId()));
+				assertStatus(status, player.getHash());
+				assertStatus(provider.getTweet(status.getId()), player.getHash());
 				assertThat(provider.getTweet(status.getId())).isEqualTo(status);
 			}
-			final Status[] statuses2 = provider.getNewTweets(player, HASH, 50);
+			final Status[] statuses2 = provider.getNewTweets(player, player.getHash(), 50);
 			assertThat(statuses2).isNotNull();
 			assertThat(statuses2).hasSize(50);
 		} catch (RemoteException e) {
@@ -98,26 +97,26 @@ public class TweetsProviderTest
 	@Test public void testSlowTweetsProvider()
 	{
 		final TweetsProvider provider = new TweetsProviderImpl(true);
-		final GamePlayer player = new DummyPlayer();
+		final DummyPlayer player = new DummyPlayer();
 
 		try {
 			//noinspection TooBroadScope
 			long init;
 			init = currentTimeMillis() + MIN_DELAY;
-			provider.getNewTweets(player, HASH, 10);
+			provider.getNewTweets(player, player.getHash(), 10);
 			assertThat(currentTimeMillis()).isBetween(init, init + MAX_DELTA);
 
 			init = currentTimeMillis() + MIN_DELAY;
-			provider.getNewTweet(player, HASH);
+			provider.getNewTweet(player, player.getHash());
 			assertThat(currentTimeMillis()).isBetween(init, init + MAX_DELTA);
 		} catch (RemoteException e) {
 			fail("nono", e);
 		}
 	}
 
-	private void assertStatus(Status status)
+	private void assertStatus(Status status, String hash)
 	{
-		assertThat(status.getCheck()).isEqualTo(status.generateCheck(HASH));
+		assertThat(status.getCheck()).isEqualTo(status.generateCheck(hash));
 	}
 
 }

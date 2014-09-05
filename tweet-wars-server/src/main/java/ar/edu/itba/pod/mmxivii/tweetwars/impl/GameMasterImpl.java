@@ -3,11 +3,14 @@ package ar.edu.itba.pod.mmxivii.tweetwars.impl;
 import ar.edu.itba.pod.mmxivii.tweetwars.GameMaster;
 import ar.edu.itba.pod.mmxivii.tweetwars.GamePlayer;
 import ar.edu.itba.pod.mmxivii.tweetwars.Status;
+import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 
 import javax.annotation.Nonnull;
 import java.rmi.RemoteException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameMasterImpl implements GameMaster
 {
@@ -15,7 +18,21 @@ public class GameMasterImpl implements GameMaster
 	public static final String HASH_FIELD = "hash";
 	public static final String TWEET_FIELD = "tweet";
 	public static final String TWEETS_FIELDS = "tweets";
-	private final Map<String, GamePlayerData> players = new HashMap<>();
+	public static final int ALREADY_REGISTERED_SCORE = 1;
+	public static final int FIRST_REGISTERED_SCORE = 10;
+	@Nonnull private final Map<String, GamePlayerData> players = Collections.synchronizedMap(new HashMap<String, GamePlayerData>());
+	@Nonnull private final TweetsProviderImpl tweetsProvider;
+
+
+	public GameMasterImpl(@Nonnull TweetsProviderImpl tweetsProvider)
+	{
+		this.tweetsProvider = tweetsProvider;
+	}
+
+	@Nonnull public TweetsProvider getTweetsProvider()
+	{
+		return tweetsProvider;
+	}
 
 	@Override
 	public void newPlayer(@Nonnull GamePlayer player, @Nonnull String hash)
@@ -31,51 +48,88 @@ public class GameMasterImpl implements GameMaster
 	}
 
 	@Override
-	public void tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException
+	public int tweetReceived(@Nonnull GamePlayer player, @Nonnull Status tweet) throws RemoteException
 	{
 		//noinspection ConstantConditions
 		if (tweet == null) throw new NullPointerException(TWEET_FIELD);
 		final GamePlayerData playerData = getGamePlayerData(player);
-		registerTweet(tweet, playerData);
+
+		return registerTweet(tweet, playerData);
 	}
 
 	@Override
-	public void tweetsReceived(@Nonnull GamePlayer player, @Nonnull Status[] tweets) throws RemoteException
+	public int tweetsReceived(@Nonnull GamePlayer player, @Nonnull Status[] tweets) throws RemoteException
 	{
 		//noinspection ConstantConditions
 		if (tweets == null) throw new NullPointerException(TWEETS_FIELDS);
 		if (tweets.length < 1 || tweets.length > 100) throw new IllegalArgumentException("Invalid tweeets size");
 		final GamePlayerData playerData = getGamePlayerData(player);
-		for (Status tweet : tweets) {
-			registerTweet(tweet, playerData);
-		}
+
+		int result = 0;
+		for (Status tweet : tweets) result = registerTweet(tweet, playerData);
+		return result;
 	}
 
-	private GamePlayerData getGamePlayerData(@Nonnull GamePlayer player)
+	@Nonnull private GamePlayerData getGamePlayerData(@Nonnull GamePlayer player)
 	{
 		//noinspection ConstantConditions
 		if (player == null) throw new NullPointerException(PLAYER_FIELD);
-		final GamePlayerData data = players.get(player.getId());
-		if (data == null) throw new IllegalArgumentException("player not registered: " + player.getId());
+		return getGamePlayerData(player.getId());
+	}
+
+	@Nonnull private GamePlayerData getGamePlayerData(@Nonnull String playerId)
+	{
+		//noinspection ConstantConditions
+		if (playerId == null) throw new NullPointerException(PLAYER_FIELD);
+		final GamePlayerData data = players.get(playerId);
+		if (data == null) throw new IllegalArgumentException("player not registered: " + playerId);
+		if (data.isBanned) throw new IllegalArgumentException("player is banned, cannot play anymore: " + playerId);
 		return data;
 	}
 
-	private void registerTweet(Status tweet, GamePlayerData playerData)
+	@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+	private int registerTweet(@Nonnull Status tweet, @Nonnull GamePlayerData playerData)
 	{
-		final String hashCheck = tweet.generateCheck(playerData.hash);
-		if (!tweet.getCheck().equals(hashCheck)) throw new IllegalArgumentException("invalid hash check");
-		if (tweet.getSource().equals(playerData.player.getId())) throw new IllegalArgumentException("Cannot register your own tweets");
+		try {
+			if (tweet.getSource().equals(playerData.getId())) throw new IllegalArgumentException("Cannot register your own tweets");
+			final GamePlayerData sourcePlayerData = getGamePlayerData(tweet.getSource());
+
+			final int[] r = tweetsProvider.registerTweet(tweet, sourcePlayerData.player, sourcePlayerData.hash);
+
+			sourcePlayerData.addAndGet(r[1]);
+			return playerData.addAndGet(r[0]);
+		} catch (IllegalArgumentException e) {
+			playerData.banned();
+			throw e;
+		}
 	}
 
 	class GamePlayerData
 	{
 		final GamePlayer player;
 		final String hash;
+		AtomicInteger score = new AtomicInteger();
+		boolean isBanned;
 
-		GamePlayerData(GamePlayer player, String hash)
+		GamePlayerData(@Nonnull GamePlayer player, @Nonnull String hash)
 		{
 			this.player = player;
 			this.hash = hash;
+		}
+
+		void banned()
+		{
+			isBanned = true;
+		}
+
+		int addAndGet(int delta)
+		{
+			return score.addAndGet(delta);
+		}
+
+		String getId()
+		{
+			return player.getId();
 		}
 	}
 }

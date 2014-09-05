@@ -1,6 +1,5 @@
 package ar.edu.itba.pod.mmxivii;
 
-import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.GameMasterImpl;
 import ar.edu.itba.pod.mmxivii.tweetwars.impl.TweetsProviderImpl;
 import org.apache.commons.cli.*;
@@ -41,8 +40,8 @@ public class App
 			    System.setProperty("sun.rmi.transport.tcp.maxConnectionThreads", maxThreads);
 		    }
 
-		    final GameMasterImpl gameMaster = new GameMasterImpl();
-		    final TweetsProvider tweetsProvider = new TweetsProviderImpl(slow);
+		    final TweetsProviderImpl tweetsProvider = new TweetsProviderImpl(slow);
+		    final GameMasterImpl gameMaster = new GameMasterImpl(tweetsProvider);
 
 		    System.out.println( String.format("Starting Tweet Wars! Port:%d", port));
 		    registry = LocateRegistry.createRegistry(port);

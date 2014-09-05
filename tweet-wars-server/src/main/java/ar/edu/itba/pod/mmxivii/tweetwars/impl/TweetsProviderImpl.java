@@ -22,7 +22,7 @@ public class TweetsProviderImpl implements TweetsProvider
 	private final FortuneWheel fortuneWheel = new FortuneWheel();
 	private final Random random = new Random();
 	private final boolean slow;
-	private final Map<Long, Status> tweets = Collections.synchronizedMap(new HashMap<Long, Status>());
+	@Nonnull private final Map<Long, TweetData> tweets = Collections.synchronizedMap(new HashMap<Long, TweetData>());
 
 	public TweetsProviderImpl()
 	{
@@ -59,19 +59,69 @@ public class TweetsProviderImpl implements TweetsProvider
 	@Override
 	public Status getTweet(long id) throws RemoteException
 	{
-		return tweets.get(id);
+		delay();
+		final TweetData tweetData = tweets.get(id);
+		return tweetData != null ? tweetData.tweet : null;
 	}
 
-	private Status generateTweet(@Nonnull GamePlayer player, String hash)
+	boolean containsTweet(long id)
 	{
-		final Status status = new Status(tweetId.incrementAndGet(), fortuneWheel.next(), player.getId(), hash);
-		tweets.put(status.getId(), status);
-		return status;
+		return tweets.containsKey(id);
+	}
+
+	int[] registerTweet(@Nonnull Status tweet, @Nonnull GamePlayer sourcePlayer, @Nonnull String sourceHash)
+	{
+		final String hashCheck = tweet.generateCheck(sourceHash);
+		if (!tweet.getCheck().equals(hashCheck)) throw new IllegalArgumentException("invalid hash check");
+
+		int tweetScore = 1;
+		int playerScore = 1;
+		synchronized (tweets) {
+			final TweetData tweetData = tweets.get(tweet.getId());
+			if (tweetData == null) {
+				// first register of a false tweet, good!
+				final TweetData data = new TweetData(tweet, false, true);
+				tweets.put(tweet.getId(), data);
+				tweetScore += 1000; // first register of a fake tweet, good for the source
+				playerScore += 100; // first register of a tweet
+			} else {
+				if (!tweet.equals(tweetData.tweet)) throw new IllegalArgumentException("There is another tweet with the same id!");
+				if (!tweetData.isRegistered) playerScore += 100;
+				else tweetData.isRegistered = true;
+			}
+		}
+		return new int[]{playerScore, tweetScore};
+	}
+
+	private Status generateTweet(@Nonnull GamePlayer player, @Nonnull String hash)
+	{
+		synchronized (tweets) {
+			long id = tweetId.incrementAndGet();
+			while (tweets.containsKey(id)) id = tweetId.incrementAndGet();
+			final Status status = new Status(id, fortuneWheel.next(), player.getId(), hash);
+			final TweetData tweetData = new TweetData(status, true, false);
+			tweets.put(id, tweetData);
+			return status;
+		}
 	}
 
 	private void delay()
 	{
 		if (slow)
 			try { Thread.sleep(random.nextInt(MAX_DELTA) + MIN_DELAY); } catch (InterruptedException ignore) {}
+	}
+
+	class TweetData
+	{
+		Status tweet;
+		boolean isReal;
+		boolean isRegistered;
+
+		TweetData(Status tweet, boolean isReal, boolean isRegistered)
+		{
+			this.tweet = tweet;
+			this.isReal = isReal;
+			this.isRegistered = isRegistered;
+		}
 	}
 }

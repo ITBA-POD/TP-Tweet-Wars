@@ -10,13 +10,13 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import static ar.edu.itba.pod.mmxivii.DummyPlayer.HASH;
-import static ar.edu.itba.pod.mmxivii.DummyPlayer.USER2;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MainAppTest
 {
 	private static final int WAIT_APP = 500;
+	private final DummyPlayer player1 = new DummyPlayer();
+	private final DummyPlayer player2 = new DummyPlayer();
 
 	@Test public void testMain() throws RemoteException, NotBoundException, InterruptedException
 	{
@@ -37,12 +37,10 @@ public class MainAppTest
 		final GameMaster gameMaster = (GameMaster) registry.lookup(App.GAME_MASTER_NAME);
 		assertThat(gameMaster).isNotNull();
 
-		final DummyPlayer player = new DummyPlayer();
-		final DummyPlayer player2 = new DummyPlayer(USER2);
-		gameMaster.newPlayer(player, HASH);
-		gameMaster.newPlayer(player2, HASH);
+		gameMaster.newPlayer(player1, player1.getHash());
+		gameMaster.newPlayer(player2, player2.getHash());
 
-		final Status tweet = tweetsProvider.getNewTweet(player, HASH);
+		final Status tweet = tweetsProvider.getNewTweet(player1, player1.getHash());
 		gameMaster.tweetReceived(player2, tweet);
 		App.shutdown();
 	}
