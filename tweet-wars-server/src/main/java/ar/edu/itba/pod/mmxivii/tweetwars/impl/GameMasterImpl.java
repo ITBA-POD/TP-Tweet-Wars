@@ -19,8 +19,6 @@ public class GameMasterImpl implements GameMaster
 	public static final String HASH_FIELD = "hash";
 	public static final String TWEET_FIELD = "tweet";
 	public static final String TWEETS_FIELDS = "tweets";
-	public static final int ALREADY_REGISTERED_SCORE = 1;
-	public static final int FIRST_REGISTERED_SCORE = 10;
 	@Nonnull private final Map<String, GamePlayerData> players = Collections.synchronizedMap(new HashMap<String, GamePlayerData>());
 	@Nonnull private final TweetsProviderImpl tweetsProvider;
 
@@ -46,6 +44,7 @@ public class GameMasterImpl implements GameMaster
 		if (players.containsKey(player.getId())) throw new IllegalArgumentException("player id already registered: " + player.getId());
 
 		players.put(player.getId(), new GamePlayerData(player, hash));
+		tweetsProvider.delay();
 	}
 
 	@Override
@@ -55,6 +54,7 @@ public class GameMasterImpl implements GameMaster
 		if (tweet == null) throw new NullPointerException(TWEET_FIELD);
 		final GamePlayerData playerData = getGamePlayerData(player);
 
+		tweetsProvider.delay();
 		return registerTweet(tweet, playerData);
 	}
 
@@ -63,11 +63,12 @@ public class GameMasterImpl implements GameMaster
 	{
 		//noinspection ConstantConditions
 		if (tweets == null) throw new NullPointerException(TWEETS_FIELDS);
-		if (tweets.length < 1 || tweets.length > 100) throw new IllegalArgumentException("Invalid tweeets size");
+		if (tweets.length < 1 || tweets.length > MAX_TWEETS_BATCH) throw new IllegalArgumentException("Invalid tweeets size");
 		final GamePlayerData playerData = getGamePlayerData(player);
 
 		int result = 0;
 		for (Status tweet : tweets) result = registerTweet(tweet, playerData);
+		tweetsProvider.delay();
 		return result;
 	}
 
@@ -75,6 +76,7 @@ public class GameMasterImpl implements GameMaster
 	public int getScore(@Nonnull GamePlayer player) throws RemoteException
 	{
 		final GamePlayerData playerData = getGamePlayerData(player);
+		tweetsProvider.delay();
 		return playerData.score.get();
 	}
 
@@ -85,7 +87,35 @@ public class GameMasterImpl implements GameMaster
 		for (GamePlayerData data : players.values()) {
 			result.put(data.score.get(), data.getId());
 		}
+		tweetsProvider.delay();
 		return result;
+	}
+
+	@Override
+	public int reportFake(@Nonnull GamePlayer player, @Nonnull Status[] tweets) throws RemoteException
+	{
+		tweetsProvider.delay();
+		final GamePlayerData playerData = getGamePlayerData(player);
+		try {
+			if (tweets.length < MIN_FAKE_TWEETS_BATCH) throw new IllegalArgumentException("Invalid fake tweeets size");
+
+			GamePlayerData source = null;
+			for (Status tweet : tweets) {
+				if (tweet == null) throw new NullPointerException(TWEET_FIELD);
+				if (source == null) source = getGamePlayerData(tweet.getSource(), false);
+				else if (!source.getId().equals(tweet.getSource())) throw new IllegalArgumentException("Not all tweets from the same source");
+				tweetsProvider.registerFakeTweet(tweet, source.player, source.hash);
+			}
+			assert source != null;
+			if (source.getId().equals(player.getId())) throw new IllegalArgumentException("You cannot report yourself!");
+			final boolean isBanned = source.isBanned;
+			source.isBanned = true;
+			final int playerScore = isBanned ? ALREADY_BANNED_SCORE : FIRST_BANNED_SCORE;
+			return playerData.addAndGet(playerScore);
+		} catch (IllegalArgumentException e) {
+			playerData.banned();
+			throw e;
+		}
 	}
 
 	@Nonnull private GamePlayerData getGamePlayerData(@Nonnull GamePlayer player)
@@ -97,11 +127,16 @@ public class GameMasterImpl implements GameMaster
 
 	@Nonnull private GamePlayerData getGamePlayerData(@Nonnull String playerId)
 	{
+		return getGamePlayerData(playerId, true);
+	}
+
+	@Nonnull private GamePlayerData getGamePlayerData(@Nonnull String playerId, boolean checkBanned)
+	{
 		//noinspection ConstantConditions
 		if (playerId == null) throw new NullPointerException(PLAYER_FIELD);
 		final GamePlayerData data = players.get(playerId);
 		if (data == null) throw new IllegalArgumentException("player not registered: " + playerId);
-		if (data.isBanned) throw new IllegalArgumentException("player is banned, cannot play anymore: " + playerId);
+		if (checkBanned && data.isBanned) throw new IllegalArgumentException("player is banned, cannot play anymore: " + playerId);
 		return data;
 	}
 

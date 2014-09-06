@@ -61,27 +61,34 @@ public class TweetsProviderImpl implements TweetsProvider
 	{
 		delay();
 		final TweetData tweetData = tweets.get(id);
-		return tweetData != null ? tweetData.tweet : null;
+		return tweetData != null && tweetData.isReal ? tweetData.tweet : null;
 	}
 
-	boolean containsTweet(long id)
+	void registerFakeTweet(@Nonnull Status tweet, GamePlayer player, @Nonnull String sourceHash)
 	{
-		return tweets.containsKey(id);
+		final TweetData checkTweet = tweets.get(tweet.getId());
+		if (checkTweet != null) {
+			if (!checkTweet.tweet.equals(tweet)) throw new IllegalArgumentException("Invalid tweet: " + tweet);
+			if (checkTweet.isReal) throw new IllegalArgumentException("This tweet is not fake! " + tweet);
+		} else {
+			registerNewFakeTweet(tweet, sourceHash);
+		}
+	}
+
+	Status getTweetInternal(long id)
+	{
+		final TweetData tweetData = tweets.get(id);
+		return tweetData != null ? tweetData.tweet : null;
 	}
 
 	int[] registerTweet(@Nonnull Status tweet, @Nonnull GamePlayer sourcePlayer, @Nonnull String sourceHash)
 	{
-		final String hashCheck = tweet.generateCheck(sourceHash);
-		if (!tweet.getCheck().equals(hashCheck)) throw new IllegalArgumentException("invalid hash check");
-
 		int tweetScore = 1;
 		int playerScore = 1;
 		synchronized (tweets) {
 			final TweetData tweetData = tweets.get(tweet.getId());
 			if (tweetData == null) {
-				// first register of a false tweet, good!
-				final TweetData data = new TweetData(tweet, false, true);
-				tweets.put(tweet.getId(), data);
+				registerNewFakeTweet(tweet, sourceHash);
 				tweetScore += NEW_FAKE_TWEET_BONUS; // first register of a fake tweet, good for the source
 				playerScore += FIRST_REGISTER_BONUS; // first register of a tweet
 			} else {
@@ -93,6 +100,17 @@ public class TweetsProviderImpl implements TweetsProvider
 			}
 		}
 		return new int[]{playerScore, tweetScore};
+	}
+
+	private void registerNewFakeTweet(@Nonnull Status tweet, @Nonnull String sourceHash)
+	{
+		synchronized (tweets) {
+			final String hashCheck = tweet.generateCheck(sourceHash);
+			if (!tweet.getCheck().equals(hashCheck)) throw new IllegalArgumentException("invalid hash check");
+			// first register of a false tweet, good!
+			final TweetData data = new TweetData(tweet, false, true);
+			tweets.put(tweet.getId(), data);
+		}
 	}
 
 	private Status generateTweet(@Nonnull GamePlayer player, @Nonnull String hash)
@@ -107,7 +125,7 @@ public class TweetsProviderImpl implements TweetsProvider
 		}
 	}
 
-	private void delay()
+	void delay()
 	{
 		if (slow)
 			try { Thread.sleep(random.nextInt(MAX_DELTA) + MIN_DELAY); } catch (InterruptedException ignore) {}

@@ -53,6 +53,16 @@ public class Status implements Serializable
 	}
 
 	@Override
+	public String toString()
+	{
+		return "Status{" +
+				"id=" + id +
+				", source='" + source + '\'' +
+				", text='" + text + '\'' +
+				'}';
+	}
+
+	@Override
 	public boolean equals(Object o)
 	{
 		if (this == o) return true;
