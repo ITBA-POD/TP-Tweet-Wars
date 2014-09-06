@@ -3,14 +3,20 @@ TP-Tweet-Wars
 
 TP POD Tweet Wars
 
-La idea es publicar tweets y detectar los tweets falsos.
+La idea es publicar tweets y detectar los tweets falsos y reportar los tweets falsos. 
+
 Va a existir un servidor (no que sirva de fuente de tweets válidos, y los clientes deben obtener los tweets de ese servidor. Luego de obtener los tweets hay que difundirlos entre los otros jugadores.
 
-Se ganan puntos por avisar al servidor cuando se reciben tweets, cuando se detectan tweets falsos, y cuando se reporta un usuario que ha publicado más de X tweets falsos. Gana el jugador que sobreviva hasta el final y tenga la mayor cantidad de puntos.
+Se ganan puntos por:
+* Cuando se avisa que se recibe un tweet  
+* la primera vez que alguien avisa que recibió un tweet la fuente recibe puntos
+* cuando se reportan tweet falsos y se hecha a un jugador 
+Gana el jugador que sobreviva hasta el final y tenga la mayor cantidad de puntos.
+
 Se gana:
-- 1 punto por tweet recibido para el que acepta un tweet
-- 1 punto cuando un tweet verdadero del jugador es aceptado, y 10 puntos cuando el tweet es falso
-- 100 puntos por eliminar otro jugador
+- X punto por tweet recibido para el que acepta un tweet
+- Z punto cuando un tweet verdadero del jugador es aceptado, y Y puntos cuando el tweet es falso
+- W puntos por eliminar otro jugador
 
 Cada jugador tiene que instanciar un GamePlayer con su id y una descripcion, generar un hash privado y registrar ese objeto más el hash con el master.
 
@@ -32,5 +38,6 @@ El GameMaster tiene los siguientes métodos:
 * aceptar tweet 
 * aceptar tweets (max 100)
 * reportar trucho (tienen que ser como minimo 5 tweets del mismo source)
+* obtener mis puntos
 
-
+En los tests hay ejemplos para todas la operaciones necesarias.
