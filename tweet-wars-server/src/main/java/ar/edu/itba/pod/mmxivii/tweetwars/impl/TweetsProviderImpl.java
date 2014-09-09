@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings("DuplicateStringLiteralInspection")
 public class TweetsProviderImpl implements TweetsProvider
 {
-	public static final int MAX_BATCH_SIZE = 100;
 	public static final int MIN_DELAY = 200;
 	public static final int MAX_DELTA = 800;
 	private final AtomicLong tweetId = new AtomicLong();
@@ -62,6 +62,23 @@ public class TweetsProviderImpl implements TweetsProvider
 		delay();
 		final TweetData tweetData = tweets.get(id);
 		return tweetData != null && tweetData.isReal ? tweetData.tweet : null;
+	}
+
+	@Nonnull
+	@Override
+	public Status[] getTweets(long[] ids) throws RemoteException
+	{
+		delay();
+		final int size = ids.length;
+		if (size < 1 || size > MAX_BATCH_SIZE) throw new IllegalArgumentException("invalid size: " + size);
+		final Status[] result = new Status[size];
+		for (int i = 0; i < size; i++) {
+			final TweetData tweetData = tweets.get(ids[i]);
+			//noinspection AssignmentToNull
+			result[i] = tweetData != null && tweetData.isReal ? tweetData.tweet : null;
+		}
+
+		return result;
 	}
 
 	void registerFakeTweet(@Nonnull Status tweet, GamePlayer player, @Nonnull String sourceHash)
