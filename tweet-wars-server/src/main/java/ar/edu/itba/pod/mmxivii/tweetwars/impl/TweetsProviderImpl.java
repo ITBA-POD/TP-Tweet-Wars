@@ -11,14 +11,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("DuplicateStringLiteralInspection")
 public class TweetsProviderImpl implements TweetsProvider
 {
 	public static final int MIN_DELAY = 200;
 	public static final int MAX_DELTA = 800;
-	private final AtomicLong tweetId = new AtomicLong();
 	private final FortuneWheel fortuneWheel = new FortuneWheel();
 	private final Random random = new Random();
 	private final boolean slow;
@@ -133,8 +131,8 @@ public class TweetsProviderImpl implements TweetsProvider
 	private Status generateTweet(@Nonnull GamePlayer player, @Nonnull String hash)
 	{
 		synchronized (tweets) {
-			long id = tweetId.incrementAndGet();
-			while (tweets.containsKey(id)) id = tweetId.incrementAndGet();
+			long id = random.nextLong();
+			while (tweets.containsKey(id)) id = random.nextLong();
 			final Status status = new Status(id, fortuneWheel.next(), player.getId(), hash);
 			final TweetData tweetData = new TweetData(status, true, false);
 			tweets.put(id, tweetData);
