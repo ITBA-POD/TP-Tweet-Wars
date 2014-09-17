@@ -7,10 +7,7 @@ import ar.edu.itba.pod.mmxivii.tweetwars.TweetsProvider;
 
 import javax.annotation.Nonnull;
 import java.rmi.RemoteException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameMasterImpl implements GameMaster
@@ -99,11 +96,14 @@ public class GameMasterImpl implements GameMaster
 		try {
 			if (tweets.length < MIN_FAKE_TWEETS_BATCH) throw new IllegalArgumentException("Invalid fake tweeets size");
 
+			final List<Long> ids = new ArrayList<>();
 			GamePlayerData source = null;
 			for (Status tweet : tweets) {
 				if (tweet == null) throw new NullPointerException(TWEET_FIELD);
 				if (source == null) source = getGamePlayerData(tweet.getSource(), false);
 				else if (!source.getId().equals(tweet.getSource())) throw new IllegalArgumentException("Not all tweets from the same source");
+				if (ids.contains(tweet.getId())) throw new IllegalArgumentException("Tweet repeated");
+				ids.add(tweet.getId());
 				tweetsProvider.registerFakeTweet(tweet, source.player, source.hash);
 			}
 			assert source != null;

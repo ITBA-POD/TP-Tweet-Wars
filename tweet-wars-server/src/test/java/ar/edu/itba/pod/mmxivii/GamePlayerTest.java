@@ -213,9 +213,26 @@ public class GamePlayerTest
 			final int newScore3 = gameMaster.reportFake(player3, fakes.toArray(new Status[fakes.size()]));
 			assertThat(newScore3).isEqualTo(score3 + GameMaster.ALREADY_BANNED_SCORE);
 
+			final int newScore3b = gameMaster.reportFake(player3, fakes.toArray(new Status[fakes.size()]));
+			assertThat(newScore3b).isEqualTo(newScore3 + GameMaster.ALREADY_BANNED_SCORE);
+
+			try {
+				// test repeated
+				final Status[] tweets = fakes.toArray(new Status[fakes.size()]);
+				tweets[0] = tweets[1];
+				final int newScore3c = gameMaster.reportFake(player3, tweets);
+				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+			} catch (IllegalArgumentException ignore) {}
+
 			try {
 				final Status newTweet = tweetsProvider.getNewTweet(player1, player1.getHash());
 				gameMaster.tweetReceived(player2, newTweet);
+				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+			} catch (IllegalArgumentException ignore) {}
+
+			try {
+				final Status newTweet = tweetsProvider.getNewTweet(player1, player1.getHash());
+				gameMaster.tweetReceived(player3, newTweet);
 				failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
 			} catch (IllegalArgumentException ignore) {}
 		} catch (RemoteException e) {
