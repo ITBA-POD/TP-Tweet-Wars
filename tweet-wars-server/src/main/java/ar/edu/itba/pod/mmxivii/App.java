@@ -46,7 +46,7 @@ public class App
 		    final TweetsProviderImpl tweetsProvider = new TweetsProviderImpl(slow);
 		    final GameMasterImpl gameMaster = new GameMasterImpl(tweetsProvider);
 
-		    System.out.println( String.format("Starting Tweet Wars! Port:%d", port));
+		    System.out.println( String.format("Starting Tweet Wars! Port:%d Slow:%s", port, String.valueOf(slow)));
 		    registry = LocateRegistry.createRegistry(port);
 
 		    registry.bind(TWEETS_PROVIDER_NAME, UnicastRemoteObject.exportObject(tweetsProvider, 0));
