@@ -102,9 +102,9 @@ public class TweetsProviderTest
 		try {
 			//noinspection TooBroadScope
 			long init;
-			init = currentTimeMillis() + MIN_DELAY;
+			init = currentTimeMillis();
 			provider.getNewTweets(player, player.getHash(), 10);
-			assertThat(currentTimeMillis()).isBetween(init, init + MAX_DELTA);
+			assertThat(currentTimeMillis() - init).isBetween((long) MIN_DELAY, (long) MIN_DELAY + MAX_DELTA);
 
 			init = currentTimeMillis() + MIN_DELAY;
 			provider.getNewTweet(player, player.getHash());
