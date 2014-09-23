@@ -14,6 +14,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 import java.util.Scanner;
 
+@SuppressWarnings("DuplicateStringLiteralInspection")
 public class App
 {
 	public static final String TWEETS_PROVIDER_NAME = "tweetsProvider";
@@ -57,9 +58,12 @@ public class App
 		    String line;
 		    do {
 			    line = scan.next();
-			    shutdown();
-
+			    //noinspection NestedTryStatement
+			    try {
+				    printScores();
+			    } catch (NotBoundException ignore) {}
 		    } while(!"x".equals(line));
+		    shutdown();
 		    System.exit(0);
 
 	    } catch (RemoteException | ParseException | AlreadyBoundException e) {

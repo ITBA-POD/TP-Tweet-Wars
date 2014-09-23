@@ -38,9 +38,11 @@ public class GameMasterImpl implements GameMaster
 		//noinspection ConstantConditions
 		if (player == null) throw new NullPointerException(PLAYER_FIELD);
 
-		if (players.containsKey(player.getId())) throw new IllegalArgumentException("player id already registered: " + player.getId());
+		final GamePlayerData other = players.get(player.getId());
+		if (other != null && !hash.equals(other.hash)) throw new IllegalArgumentException("player id already registered: " + player.getId());
 
 		players.put(player.getId(), new GamePlayerData(player, hash));
+		System.out.println("New Player " + player.getId() + " " + player.getDescription());
 		tweetsProvider.delay();
 	}
 
@@ -153,6 +155,7 @@ public class GameMasterImpl implements GameMaster
 			return playerData.addAndGet(r[0]);
 		} catch (IllegalArgumentException e) {
 			playerData.banned();
+			System.out.println("Player Banned " + playerData.getId() + " " + e.getMessage());
 			throw e;
 		}
 	}
